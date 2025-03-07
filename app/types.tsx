@@ -6,7 +6,6 @@ export interface Textbook {
   uploadedAt: Date;
 }
 
-// Other types...
 export type RootStackParamList = {
   'Authpage/SignupScreen': undefined;
   'Authpage/LoginScreen': undefined;

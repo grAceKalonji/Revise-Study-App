@@ -3,8 +3,9 @@ import { View, TextInput, Button, Alert } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from './types';
+import { auth } from '../../firebase'
 
-type SignupScreenNavigationProp = StackNavigationProp<RootStackParamList, '(auth)/SignupScreen'>;
+type SignupScreenNavigationProp = StackNavigationProp<RootStackParamList, '(auth)/SignUpScreen'>;
 
 interface Props {
   navigation: SignupScreenNavigationProp;

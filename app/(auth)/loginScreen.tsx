@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Alert } from 'react-native';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 
-type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, '(auth)/loginScreen'>;
-
-interface Props {
-  navigation: LoginScreenNavigationProp;
-}
-
-interface Props {
-  navigation: LoginScreenNavigationProp;
-}
-
-const LoginScreen: React.FC<Props> = ({ navigation }) => {
+const LoginScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
@@ -30,22 +22,36 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View>
+    <View style={{ padding: 20 }}>
       <TextInput
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        style={styles.input}
       />
       <TextInput
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        style={styles.input}
       />
       <Button title="Login" onPress={handleLogin} />
-      <Button title="Sign Up" onPress={() => navigation.navigate('(auth)/SignUpScreen')} />
+      <Button 
+        title="Sign Up" 
+        onPress={() => navigation.navigate('(auth)/SignUpScreen')}
+      />
     </View>
   );
+};
+
+const styles = {
+  input: {
+    marginBottom: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 5,
+  }
 };
 
 export default LoginScreen;

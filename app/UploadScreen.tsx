@@ -2,73 +2,105 @@ import React, { useState } from 'react';
 import { View, Button, Alert, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import { DocumentPickerResult } from 'expo-document-picker';
 import { FontAwesome } from '@expo/vector-icons';
 import { Textbook } from './types'; 
+import PdfThumbnail from 'react-native-pdf-thumbnail';
 
 // Define the VisionApiResponse type
 interface VisionApiResponse {
   responses: {
-    fullTextAnnotation: {
+    fullTextAnnotation?: {
       text: string;
     };
   }[];
 }
 
+interface PdfPage {
+  uri: string;
+}
+
 // Define the props for the UploadScreen component
 interface UploadScreenProps {
-  onTextbookUpload: (textbook: Textbook) => void; // Add this prop to pass data to parent
+  onTextbookUpload: (textbook: Textbook) => void;
 }
+
+const convertPdfToImages = async (pdfUri: string): Promise<string[]> => {
+  try {
+    const thumbnail = await PdfThumbnail.generate(pdfUri, 1); // Generate first-page thumbnail
+    return [thumbnail.uri]; // Wrap it in an array
+  } catch (error) {
+    console.error('Error converting PDF to images:', error);
+    return [];
+  }
+};
+
+const extractTextFromImage = async (imageUri: string): Promise<string> => {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    const apiKey = 'AIzaSyBhyKMed-6vgZ5KTqAZLe89qcdXveGwyXE';
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [
+            {
+              image: { content: base64 },
+              features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+            },
+          ],
+        }),
+      }
+    );
+
+    const result: VisionApiResponse = await response.json();
+    return result.responses?.[0]?.fullTextAnnotation?.text || '';
+  } catch (error) {
+    console.error('Error extracting text:', error);
+    return '';
+  }
+};
 
 const UploadScreen: React.FC<UploadScreenProps> = ({ onTextbookUpload }) => {
   const [textbooks, setTextbooks] = useState<Textbook[]>([]);
 
   const handleUpload = async () => {
     try {
-      const res = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-      });
+      const res = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
 
       if (!res.canceled && res.assets[0]) {
         const asset = res.assets[0];
-        const base64 = await FileSystem.readAsStringAsync(asset.uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        const images = await convertPdfToImages(asset.uri);
 
-        // Call Google Cloud Vision API
-        const apiKey = 'AIzaSyBhyKMed-6vgZ5KTqAZLe89qcdXveGwyXE';
-        const response = await fetch(
-          `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              requests: [{
-                image: { content: base64 },
-                features: [{type: 'DOCUMENT_TEXT_DETECTION'}]
-              }]
-            }),
-          }
-        );
-
-        const result = await response.json();
-        if (!result?.responses?.[0]?.fullTextAnnotation?.text) {
-          throw new Error('Failed to extract text. Please ensure clear text in PDF.');
+        if (images.length === 0) {
+          throw new Error('Failed to convert PDF to images.');
         }
 
-        // const result: VisionApiResponse = await response.json();
-        const extractedText = result.responses[0].fullTextAnnotation.text;
+        // Extract text from each image page
+        let extractedText = '';
+        for (const image of images) {
+          const text = await extractTextFromImage(image);
+          extractedText += text + '\n\n'; // Add spacing between pages
+        }
+
+        if (!extractedText.trim()) {
+          throw new Error('Failed to extract text. Ensure clear text in PDF.');
+        }
 
         const newTextbook: Textbook = {
           id: Math.random().toString(),
           name: asset.name || 'Unnamed Document',
           uri: asset.uri,
           extractedText,
-          uploadedAt: new Date()
+          uploadedAt: new Date(),
         };
 
-        setTextbooks(prev => [...prev, newTextbook]);
-        onTextbookUpload(newTextbook); // Pass data to parent
+        setTextbooks((prev) => [...prev, newTextbook]);
+        onTextbookUpload(newTextbook);
         Alert.alert('Success', 'Textbook processed successfully');
       }
     } catch (error: any) {
@@ -77,14 +109,13 @@ const UploadScreen: React.FC<UploadScreenProps> = ({ onTextbookUpload }) => {
   };
 
   const removeTextbook = (id: string) => {
-    setTextbooks(prev => prev.filter(t => t.id !== id));
+    setTextbooks((prev) => prev.filter((t) => t.id !== id));
   };
 
   return (
     <View style={styles.container}>
-      <View style= {{paddingTop: 60}}></View> 
+      <View style={{ paddingTop: 60 }}></View>
       <Button title="Upload Textbook" onPress={handleUpload} />
-
 
       <FlatList
         data={textbooks}
@@ -101,17 +132,12 @@ const UploadScreen: React.FC<UploadScreenProps> = ({ onTextbookUpload }) => {
                 Uploaded: {item.uploadedAt.toLocaleDateString()}
               </Text>
             </View>
-            <TouchableOpacity 
-              onPress={() => removeTextbook(item.id)}
-              style={styles.deleteButton}
-            >
+            <TouchableOpacity onPress={() => removeTextbook(item.id)} style={styles.deleteButton}>
               <FontAwesome name="trash-o" size={20} color="#c0392b" />
             </TouchableOpacity>
           </View>
         )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No textbooks uploaded yet</Text>
-        }
+        ListEmptyComponent={<Text style={styles.emptyText}>No textbooks uploaded yet</Text>}
       />
     </View>
   );
@@ -119,7 +145,6 @@ const UploadScreen: React.FC<UploadScreenProps> = ({ onTextbookUpload }) => {
 
 const styles = StyleSheet.create({
   container: {
-    
     flex: 1,
     width: '100%',
   },
