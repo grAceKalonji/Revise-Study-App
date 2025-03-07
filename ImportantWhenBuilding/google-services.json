@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "433036014890",
+    "project_id": "revise-studyapp",
+    "storage_bucket": "revise-studyapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:433036014890:android:34f4ab5548512abbc65a53",
+        "android_client_info": {
+          "package_name": "com.GraceMKalonji.revise"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0ElZC2YhQfHSkzVb0gkC0X6TP5mRzFNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

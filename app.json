@@ -14,9 +14,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "newArchEnabled": true,
+      "supportsTablet": true,
+      "bundleIdentifier": "com.GraceMKalonji.revise"
     },
     "android": {
+      "newArchEnabled": true,
+      "package": "com.GraceMKalonji.revise",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
